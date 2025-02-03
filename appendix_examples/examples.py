@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-savepath = 'dipd-experiments/appendix_examples/figures/'
+savepath = 'experiments/appendix_examples/figures/'
 
 sns.set_context('paper')
 sns.set_style('white')
@@ -89,7 +89,7 @@ def plots(preds, fname, ax):
     ax.spines['left'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
 
-figsize = (9, 3)
+figsize = (7, 3)
 fname = 'x2'
 
 fig, axes = plt.subplots(1, 3, figsize=figsize)  # Create a figure with 3 subplots
@@ -100,12 +100,31 @@ for ax, (dgp_name, dgp) in zip(axes, dgps.items()):
     plots(preds, fname, ax)
     ax.set_title(dgp_name)
     
-# Get handles and labels from the first subplot
-handles, labels = axes[0].get_legend_handles_labels()
-# Add a single legend to the figure
-fig.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
-
+# # Get handles and labels from the first subplot
+# handles, labels = axes[0].get_legend_handles_labels()
+# # Add a single legend to the figure
+# fig.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
+plt.legend().remove()
 plt.tight_layout()
 plt.savefig(savepath + f'cpdp-dip.pdf', bbox_inches='tight')
 plt.close()
 
+from dipd import DIP
+from dipd.plots import forceplot
+
+
+fname_scores = []
+dgps = {'DGP 1': df1, 'DGP 2': df2, 'DGP 3': df3}
+for ax, (dgp_name, df) in zip(axes, dgps.items()):
+    wrk = DIP(df, 'y', LinearGAM)
+    ex = wrk.get_all_loo()
+    scores = ex.scores.loc[fname, :]
+    scores.name = dgp_name
+    fname_scores.append(scores)
+fname_scores = pd.concat(fname_scores, axis=1)
+
+forceplot(fname_scores, f'DIP Decompositions for {fname}', split_additive=True, 
+          sort_by='name', figsize=(4, 3))
+plt.legend(loc='center right', bbox_to_anchor=(1, 0.5)).remove()
+plt.savefig(savepath + 'dip-scores.pdf', bbox_inches='tight')
+plt.close()
